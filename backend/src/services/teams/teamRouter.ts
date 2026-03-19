@@ -1,73 +1,118 @@
-import { Router, Request, Response } from 'express';
-import { createTeam, getTeamsByHackathon, joinTeam, addMessage, getMessages, createProject } from './teamService';
-import { authenticate } from '../../middleware/authenticate';
+import { Router, Request, Response } from 'express'
+import {
+  createTeam, getTeam, getTeamsByHackathon, updateTeam,
+  inviteMember, respondToInvite, leaveTeam,
+  addMessage, getMessages, createProject,
+} from './teamService'
+import { authenticate } from '../../middleware/authenticate'
 
-const teamRouter = Router();
+const teamRouter = Router()
 
+/** POST /api/teams */
 teamRouter.post('/', authenticate, async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.userId;
-    const team = await createTeam(userId, req.body);
-    res.status(201).json(team);
+    const team = await createTeam(req.user!.userId, req.body)
+    res.status(201).json(team)
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(err.status ?? 500).json({ error: err.message })
   }
-});
+})
 
+/** GET /api/teams?hackathonId=... */
 teamRouter.get('/', async (req: Request, res: Response) => {
   try {
-    const hackathonId = req.query.hackathonId as string;
-    if (!hackathonId) {
-      res.status(400).json({ error: 'hackathonId query param is required' });
-      return;
-    }
-    const teams = await getTeamsByHackathon(hackathonId);
-    res.json(teams);
+    const { hackathonId } = req.query
+    if (!hackathonId) { res.status(400).json({ error: 'hackathonId query param is required.' }); return }
+    const teams = await getTeamsByHackathon(hackathonId as string)
+    res.json(teams)
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message })
   }
-});
+})
 
-teamRouter.post('/:id/join', authenticate, async (req: Request, res: Response) => {
+/** GET /api/teams/:id */
+teamRouter.get('/:id', async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.userId;
-    const { id } = req.params;
-    const member = await joinTeam(userId, id);
-    res.json(member);
+    const team = await getTeam(req.params.id)
+    if (!team) { res.status(404).json({ error: 'Team not found.' }); return }
+    res.json(team)
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message })
   }
-});
+})
 
+/** PATCH /api/teams/:id */
+teamRouter.patch('/:id', authenticate, async (req: Request, res: Response) => {
+  try {
+    const team = await updateTeam(req.params.id, req.user!.userId, req.body)
+    res.json(team)
+  } catch (err: any) {
+    res.status(err.status ?? 500).json({ error: err.message })
+  }
+})
+
+/** POST /api/teams/:id/invite */
+teamRouter.post('/:id/invite', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { inviteeId } = req.body
+    if (!inviteeId) { res.status(400).json({ error: 'inviteeId is required.' }); return }
+    const invite = await inviteMember(req.params.id, req.user!.userId, inviteeId)
+    res.status(201).json(invite)
+  } catch (err: any) {
+    res.status(err.status ?? 500).json({ error: err.message })
+  }
+})
+
+/** PATCH /api/teams/invites/:inviteId */
+teamRouter.patch('/invites/:inviteId', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { accept } = req.body
+    if (typeof accept !== 'boolean') { res.status(400).json({ error: 'accept (boolean) is required.' }); return }
+    const team = await respondToInvite(req.params.inviteId, req.user!.userId, accept)
+    res.json(team)
+  } catch (err: any) {
+    res.status(err.status ?? 500).json({ error: err.message })
+  }
+})
+
+/** DELETE /api/teams/:id/leave */
+teamRouter.delete('/:id/leave', authenticate, async (req: Request, res: Response) => {
+  try {
+    await leaveTeam(req.params.id, req.user!.userId)
+    res.json({ success: true })
+  } catch (err: any) {
+    res.status(err.status ?? 500).json({ error: err.message })
+  }
+})
+
+/** GET /api/teams/:id/messages */
 teamRouter.get('/:id/messages', authenticate, async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const messages = await getMessages(id);
-    res.json(messages);
+    const messages = await getMessages(req.params.id)
+    res.json(messages)
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message })
   }
-});
+})
 
+/** POST /api/teams/:id/messages */
 teamRouter.post('/:id/messages', authenticate, async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.userId;
-    const { id } = req.params;
-    const message = await addMessage(userId, id, req.body.content);
-    res.status(201).json(message);
+    const message = await addMessage(req.user!.userId, req.params.id, req.body.content)
+    res.status(201).json(message)
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message })
   }
-});
+})
 
+/** POST /api/teams/:id/projects */
 teamRouter.post('/:id/projects', authenticate, async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const project = await createProject(id, req.body);
-    res.status(201).json(project);
+    const project = await createProject(req.params.id, req.body)
+    res.status(201).json(project)
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message })
   }
-});
+})
 
-export default teamRouter;
+export default teamRouter
