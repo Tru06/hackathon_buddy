@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser'
 import authRouter from './services/auth/authRouter'
 import userRouter from './services/users/userRouter'
 import hackathonRouter from './services/hackathons/hackathonRouter'
+import hackathonSeedRouter from './services/hackathons/hackathonSeedRouter'
 import teamRouter from './services/teams/teamRouter'
 import searchRouter from './services/search/searchRouter'
 import notificationRouter from './services/notifications/notificationRouter'
@@ -32,6 +33,7 @@ app.use(cookieParser())
 app.use('/api', authRouter)
 app.use('/api/users', userRouter)
 app.use('/api/hackathons', hackathonRouter)
+app.use('/api/seed-hackathons', hackathonSeedRouter)
 app.use('/api/teams', teamRouter)
 app.use('/api/search', searchRouter)
 app.use('/api/notifications', notificationRouter)
