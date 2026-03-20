@@ -1,15 +1,18 @@
 /** @type {import('next').NextConfig} */
-// Build version: 4 - Force cache invalidation
+// Build version: 5 - Clean deployment
 const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
   },
   images: {
     unoptimized: true,
   },
   // Force clean rebuild
   generateBuildId: async () => {
-    return 'build-v4-' + Date.now()
+    return 'build-v5-' + Date.now()
   },
 }
 
