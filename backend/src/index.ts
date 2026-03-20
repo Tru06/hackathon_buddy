@@ -17,6 +17,7 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
   'https://v0-hackbuddy.vercel.app',
+  'https://hackathonbuddy-5o8bsibvs-tru06s-projects.vercel.app',
 ].filter(Boolean) as string[]
 
 app.use(cors({
