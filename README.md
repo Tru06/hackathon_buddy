@@ -205,3 +205,14 @@ Run from the `backend/` directory.
 | `npm start` | Run compiled output |
 | `npm test` | Run tests (vitest, single run) |
 | `npm run test:watch` | Run tests in watch mode |
+
+## Deployment
+
+The project is configured for Vercel deployment via `vercel.json` at the repository root.
+
+| Setting | Value |
+|---|---|
+| Framework | Next.js |
+| Root directory | `frontend-v0` |
+
+The `frontend-v0` Next.js app is the primary frontend deployed to Vercel. The backend is deployed separately (see `backend/vercel.json`).
