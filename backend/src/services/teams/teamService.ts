@@ -1,6 +1,34 @@
 import pool from '../../db/client'
 import { sendNotification } from '../notifications/notificationService'
 
+export interface MyTeam {
+  id: string
+  name: string
+  description: string
+  hackathon_id: string
+  hackathon_name: string
+  member_count: number
+  role: 'owner' | 'member'
+}
+
+export async function getMyTeams(userId: string): Promise<MyTeam[]> {
+  const result = await pool.query(
+    `SELECT t.id, t.name, t.description, t.hackathon_id,
+            h.title AS hackathon_name,
+            COUNT(tm2.user_id)::int AS member_count,
+            tm.role
+     FROM team_members tm
+     JOIN teams t ON t.id = tm.team_id
+     JOIN hackathons h ON h.id = t.hackathon_id
+     LEFT JOIN team_members tm2 ON tm2.team_id = t.id
+     WHERE tm.user_id = $1
+     GROUP BY t.id, h.title, tm.role
+     ORDER BY t.created_at DESC`,
+    [userId],
+  )
+  return result.rows
+}
+
 export async function createTeam(userId: string, data: any) {
   const { name, description, hackathon_id, max_members, required_skills, is_open } = data
   const client = await pool.connect()
@@ -221,4 +249,26 @@ export async function createProject(teamId: string, data: any) {
     [teamId, hackathon_id, title, description, repository_url, demo_url],
   )
   return result.rows[0]
+}
+
+export interface PendingInvite {
+  id: string
+  team_id: string
+  team_name: string
+  inviter_name: string
+  created_at: string
+}
+
+export async function getPendingInvites(userId: string): Promise<PendingInvite[]> {
+  const result = await pool.query(
+    `SELECT ti.id, ti.team_id, t.name AS team_name,
+            p.display_name AS inviter_name, ti.created_at
+     FROM team_invites ti
+     JOIN teams t ON t.id = ti.team_id
+     JOIN profiles p ON p.user_id = ti.inviter_id
+     WHERE ti.invitee_id = $1 AND ti.status = 'PENDING'
+     ORDER BY ti.created_at DESC`,
+    [userId],
+  )
+  return result.rows
 }

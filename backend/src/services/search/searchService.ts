@@ -91,64 +91,59 @@ export async function searchUsers(
   let idx = 2
 
   if (filters.skills && filters.skills.length > 0) {
-    conditions.push(`p.skills && $${idx}::text[]`)
+    conditions.push('p.skills && $' + idx + '::text[]')
     params.push(filters.skills)
     idx++
   }
 
   if (filters.interests && filters.interests.length > 0) {
-    conditions.push(`p.interests && $${idx}::text[]`)
+    conditions.push('p.interests && $' + idx + '::text[]')
     params.push(filters.interests)
     idx++
   }
 
   if (filters.availability) {
-    conditions.push(`p.availability = $${idx}`)
+    conditions.push('p.availability = $' + idx)
     params.push(filters.availability)
     idx++
   }
 
   if (filters.timezone) {
-    conditions.push(`p.timezone = $${idx}`)
+    conditions.push('p.timezone = $' + idx)
     params.push(filters.timezone)
     idx++
   }
 
   if (filters.hackathonId) {
-    conditions.push(`EXISTS (
-      SELECT 1 FROM hackathon_interests hi
-      WHERE hi.user_id = p.user_id AND hi.hackathon_id = $${idx}
-    )`)
+    conditions.push(
+      'EXISTS (SELECT 1 FROM hackathon_interests hi WHERE hi.user_id = p.user_id AND hi.hackathon_id = $' + idx + ')',
+    )
     params.push(filters.hackathonId)
     idx++
   }
 
   if (filters.excludeTeamed && filters.hackathonId) {
-    conditions.push(`NOT EXISTS (
-      SELECT 1 FROM team_members tm
-      JOIN teams t ON tm.team_id = t.id
-      WHERE tm.user_id = p.user_id AND t.hackathon_id = $${idx}
-    )`)
+    conditions.push(
+      'NOT EXISTS (SELECT 1 FROM team_members tm JOIN teams t ON tm.team_id = t.id WHERE tm.user_id = p.user_id AND t.hackathon_id = $' + idx + ')',
+    )
     params.push(filters.hackathonId)
     idx++
   }
 
   const where = conditions.join(' AND ')
+
   const countResult = await pool.query(
-    `SELECT COUNT(*) FROM profiles p WHERE ${where}`,
+    'SELECT COUNT(*) FROM profiles p WHERE ' + where,
     params,
   )
   const total = parseInt(countResult.rows[0].count, 10)
 
   const offset = (page - 1) * pageSize
   const result = await pool.query<ScoredProfile>(
-    `SELECT p.user_id, p.display_name, p.bio, p.skills, p.interests,
-            p.availability, p.timezone, p.avatar_url, p.github_url,
-            p.linkedin_url, p.portfolio_url
-     FROM profiles p
-     WHERE ${where}
-     ORDER BY p.updated_at DESC
-     LIMIT $${idx} OFFSET $${idx + 1}`,
+    'SELECT p.user_id, p.display_name, p.bio, p.skills, p.interests, ' +
+    'p.availability, p.timezone, p.avatar_url, p.github_url, p.linkedin_url, p.portfolio_url ' +
+    'FROM profiles p WHERE ' + where + ' ORDER BY p.updated_at DESC ' +
+    'LIMIT $' + idx + ' OFFSET $' + (idx + 1),
     [...params, pageSize, offset],
   )
 

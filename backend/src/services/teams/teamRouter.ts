@@ -3,6 +3,7 @@ import {
   createTeam, getTeam, getTeamsByHackathon, updateTeam,
   inviteMember, respondToInvite, leaveTeam,
   addMessage, getMessages, createProject,
+  getMyTeams, getPendingInvites,
 } from './teamService'
 import { authenticate } from '../../middleware/authenticate'
 
@@ -25,6 +26,26 @@ teamRouter.get('/', async (req: Request, res: Response) => {
     if (!hackathonId) { res.status(400).json({ error: 'hackathonId query param is required.' }); return }
     const teams = await getTeamsByHackathon(hackathonId as string)
     res.json(teams)
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+/** GET /api/teams/mine */
+teamRouter.get('/mine', authenticate, async (req: Request, res: Response) => {
+  try {
+    const teams = await getMyTeams(req.user!.userId)
+    res.json(teams)
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+/** GET /api/teams/invites/pending */
+teamRouter.get('/invites/pending', authenticate, async (req: Request, res: Response) => {
+  try {
+    const invites = await getPendingInvites(req.user!.userId)
+    res.json(invites)
   } catch (err: any) {
     res.status(500).json({ error: err.message })
   }
