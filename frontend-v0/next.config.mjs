@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-// Build version: 5 - Clean deployment
+// Build version: 6 - Force clean rebuild
 const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
@@ -10,9 +10,8 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Force clean rebuild
   generateBuildId: async () => {
-    return 'build-v5-' + Date.now()
+    return 'build-v6-' + Date.now()
   },
 }
 
