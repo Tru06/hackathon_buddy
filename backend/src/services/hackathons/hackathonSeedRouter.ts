@@ -68,17 +68,33 @@ const hackathons = [
 
 // GET /api/seed-hackathons  — one-time seed endpoint
 seedRouter.get('/', async (_req: Request, res: Response) => {
-  const inserted: string[] = []
-  for (const h of hackathons) {
-    const result = await pool.query(
-      `INSERT INTO hackathons (title, description, start_date, end_date, theme, location, max_team_size, registration_url)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-       ON CONFLICT DO NOTHING RETURNING title`,
-      [h.title, h.description, h.start_date, h.end_date, h.theme, h.location, h.max_team_size, h.registration_url],
-    )
-    if (result.rows[0]) inserted.push(result.rows[0].title)
+  try {
+    // Ensure columns exist (idempotent)
+    await pool.query(`
+      ALTER TABLE hackathons
+        ADD COLUMN IF NOT EXISTS location VARCHAR(255),
+        ADD COLUMN IF NOT EXISTS max_team_size INT NOT NULL DEFAULT 4,
+        ADD COLUMN IF NOT EXISTS registration_url TEXT
+    `)
+    await pool.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS hackathons_title_unique ON hackathons (title)
+    `)
+
+    const inserted: string[] = []
+    for (const h of hackathons) {
+      const result = await pool.query(
+        `INSERT INTO hackathons (title, description, start_date, end_date, theme, location, max_team_size, registration_url)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+         ON CONFLICT DO NOTHING RETURNING title`,
+        [h.title, h.description, h.start_date, h.end_date, h.theme, h.location, h.max_team_size, h.registration_url],
+      )
+      if (result.rows[0]) inserted.push(result.rows[0].title)
+    }
+    res.json({ inserted, message: `${inserted.length} hackathon(s) seeded.` })
+  } catch (err: any) {
+    console.error('Seed error:', err)
+    res.status(500).json({ error: err.message ?? 'Seed failed' })
   }
-  res.json({ inserted, message: `${inserted.length} hackathon(s) seeded.` })
 })
 
 export default seedRouter
