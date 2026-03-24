@@ -206,7 +206,7 @@ Run from the `backend/` directory.
 | `npm test` | Run tests (vitest, single run) |
 | `npm run test:watch` | Run tests in watch mode |
 
-## Deployment
+## Deployment on V0.dev
 ## v0 link : https://v0.app/chat/hackathon-buddy-website-TvT8VidwQQ8
   #         : https://v0-hackathon-buddy-website.vercel.app/
 The project is configured for Vercel deployment via `vercel.json` at the repository root.
